@@ -517,10 +517,168 @@ function minifySvg() {
   showToast('Code minified');
 }
 
+/* ---- Show/Hide Code Toggle ---- */
+function toggleCodeVisibility() {
+  const textarea = document.getElementById('svgInput');
+  const btn = document.getElementById('codeToggleBtn');
+  textarea.classList.toggle('hidden');
+  if (textarea.classList.contains('hidden')) {
+    btn.textContent = 'Show Code';
+    btn.classList.remove('active');
+  } else {
+    btn.textContent = 'Hide Code';
+    btn.classList.add('active');
+  }
+}
+
+/* ---- Color Extraction & Modification ---- */
+const colorCanvas = document.createElement('canvas');
+const colorCtx = colorCanvas.getContext('2d');
+
+function colorToHex(color) {
+  colorCtx.fillStyle = color;
+  return colorCtx.fillStyle;
+}
+
+function extractColors() {
+  const code = inputArea.value.trim();
+  const colorList = document.getElementById('colorList');
+
+  if (!code) {
+    colorList.innerHTML = '<div class="color-section-empty">Colors appear here when you edit SVG</div>';
+    return;
+  }
+
+  const colors = new Map();
+  const skipValues = ['none', 'currentcolor', 'inherit', 'transparent'];
+
+  const addColor = (color, type) => {
+    const c = color.toLowerCase().trim();
+    if (skipValues.includes(c) || c.startsWith('url(')) return;
+    const isValidColor = /^#[0-9a-fA-F]{3,8}$/.test(c) ||
+                         /^rgb\([^)]+\)$/.test(c) ||
+                         /^rgba\([^)]+\)$/.test(c) ||
+                         /^hsl\([^)]+\)$/.test(c) ||
+                         /^[a-zA-Z]{3,}$/.test(c);
+    if (!isValidColor) return;
+
+    if (!colors.has(c)) {
+      colors.set(c, { color: c, type, count: 0 });
+    }
+    colors.get(c).count++;
+  };
+
+  // Extract from quoted attributes
+  const quotedRegex = /(?:fill|stroke|stop-color|color)\s*=\s*["']([^"']+)["']/g;
+  let match;
+  while ((match = quotedRegex.exec(code)) !== null) {
+    addColor(match[1], 'attr');
+  }
+
+  // Extract from unquoted attributes
+  const unquotedRegex = /(?:fill|stroke|stop-color|color)\s*=\s*([^\s>"']+)/g;
+  while ((match = unquotedRegex.exec(code)) !== null) {
+    addColor(match[1], 'attr');
+  }
+
+  // Extract from style attributes
+  const styleRegex = /style\s*=\s*["']([^"]*)["']/g;
+  while ((match = styleRegex.exec(code)) !== null) {
+    const style = match[1];
+    const colorRegex = /(?:fill|stroke|color)\s*:\s*([^;]+)/g;
+    let cmatch;
+    while ((cmatch = colorRegex.exec(style)) !== null) {
+      addColor(cmatch[1].trim(), 'style');
+    }
+  }
+
+  if (colors.size === 0) {
+    colorList.innerHTML = '<div class="color-section-empty">No colors found in this SVG</div>';
+    return;
+  }
+
+  let html = '';
+  for (const [color, info] of colors) {
+    const hexColor = colorToHex(color);
+    html += `
+      <div class="color-swatch">
+        <input type="color" value="${hexColor}" onchange="updateColor('${color}', this.value)" title="Change ${color}" />
+        <span class="color-label">${color}</span>
+        <span class="color-val">${info.count}x</span>
+      </div>
+    `;
+  }
+  colorList.innerHTML = html;
+}
+
+function updateColor(oldColor, newColor) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(inputArea.value, "image/svg+xml");
+  const error = doc.querySelector('parsererror');
+  if (error) {
+    showToast('Cannot modify colors — SVG has parse errors');
+    return;
+  }
+
+  const elements = doc.querySelectorAll('*');
+  for (const el of elements) {
+    for (const attr of ['fill', 'stroke', 'color', 'stop-color']) {
+      const val = el.getAttribute(attr);
+      if (val && val.toLowerCase() === oldColor.toLowerCase()) {
+        el.setAttribute(attr, newColor);
+      }
+    }
+
+    const style = el.getAttribute('style');
+    if (style) {
+      let newStyle = style;
+      for (const prop of ['fill', 'stroke', 'color']) {
+        const regex = new RegExp(
+          `(${prop}\s*:\\s*)${oldColor.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=\\s*;|$)`,
+          'gi'
+        );
+        newStyle = newStyle.replace(regex, `$1${newColor}`);
+      }
+      if (newStyle !== style) el.setAttribute('style', newStyle);
+    }
+  }
+
+  const serializer = new XMLSerializer();
+  let result = serializer.serializeToString(doc.documentElement);
+  result = result.replace(/^<\?xml[^>]*>\n?/, '');
+
+  inputArea.value = result;
+  updatePreview();
+  showToast(`Color ${oldColor} → ${newColor}`);
+}
+
 /* ---- Live Preview ---- */
 function updatePreview() {
   const code = inputArea.value.trim();
   charCount.textContent = code.length.toLocaleString() + ' chars';
+  errorBox.style.display = 'none';
+  wrapper.innerHTML = '';
+
+  if (!code) {
+    wrapper.innerHTML = '<span style="color:var(--muted);font-size:0.875rem;">Preview appears here</span>';
+    extractColors();
+    return;
+  }
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(code, "image/svg+xml");
+  const parserError = doc.querySelector('parsererror');
+
+  if (parserError) {
+    errorBox.textContent = '✕ Invalid SVG — check for unclosed tags or malformed XML attributes.';
+    errorBox.style.display = 'block';
+    wrapper.innerHTML = '<span style="color:var(--error);font-size:0.875rem;">Parse error</span>';
+    return;
+  }
+
+  wrapper.appendChild(doc.documentElement);
+  extractColors();
+}
   errorBox.style.display = 'none';
   wrapper.innerHTML = '';
 
