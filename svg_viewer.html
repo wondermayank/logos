@@ -818,9 +818,61 @@ for (const c of CATS) {
 }
 ALL_ITEMS.sort((a, b) => a.n.localeCompare(b.n));
 
-// Populate select options
-const selectEl = document.getElementById('logoSelect');
-selectEl.innerHTML = ALL_ITEMS.map(i => `<option value="${i.n}">${i.n} (${i.cat})</option>`).join('');
+// Custom searchable logo picker
+const logoSearch = document.getElementById('logoSearch');
+const logoDropdown = document.getElementById('logoDropdown');
+const logoSelectValue = document.getElementById('logoSelectValue');
+
+function showLogoDropdown() {
+  if (!logoDropdown.innerHTML) filterLogos();
+  logoDropdown.classList.add('open');
+}
+
+function hideLogoDropdown() {
+  setTimeout(() => logoDropdown.classList.remove('open'), 150);
+}
+
+logoSearch.addEventListener('blur', hideLogoDropdown);
+
+function filterLogos() {
+  const q = logoSearch.value.toLowerCase().trim();
+  const matches = ALL_ITEMS.filter(i => i.n.toLowerCase().includes(q) || i.cat.toLowerCase().includes(q));
+  const maxResults = 50;
+  const toShow = matches.slice(0, maxResults);
+  
+  let html = '';
+  for (const item of toShow) {
+    html += `<div class="logo-dropdown-item" onclick="pickLogo('${item.n}')" onmousedown="event.preventDefault()">${item.n} <small>(${item.cat})</small></div>`;
+  }
+  if (matches.length > maxResults) {
+    html += `<div class="logo-dropdown-item" style="color:var(--muted);font-style:italic;">+ ${matches.length - maxResults} more…</div>`;
+  }
+  if (!html) {
+    html = `<div class="logo-dropdown-item" style="color:var(--muted);">No logos found</div>`;
+  }
+  logoDropdown.innerHTML = html;
+  logoDropdown.classList.add('open');
+}
+
+function pickLogo(name) {
+  logoSearch.value = name;
+  logoSelectValue.value = name;
+  logoDropdown.classList.remove('open');
+  loadSelectedLogo(name);
+}
+
+function handleLogoKey(e) {
+  if (e.key === 'Enter') {
+    const first = logoDropdown.querySelector('.logo-dropdown-item:not([style*="italic"])');
+    if (first) {
+      const text = first.textContent.split('(')[0].trim();
+      pickLogo(text);
+    }
+  }
+  if (e.key === 'Escape') {
+    logoDropdown.classList.remove('open');
+  }
+}
 
 // Selected SVG state
 let currentSvgCode = "";
@@ -882,11 +934,13 @@ function setStroke(stroke) {
 }
 
 // Fetch SVG and render
-async function loadSelectedLogo() {
-  const name = selectEl.value;
+async function loadSelectedLogo(name) {
+  if (!name) name = logoSelectValue.value;
+  if (!name) return;
   currentSvgName = name;
   try {
     const res = await fetch(`logos/${name}.svg`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     currentSvgCode = await res.text();
     applyCustomColors();
   } catch (err) {
@@ -1007,7 +1061,11 @@ export function ${pascalName}(props) {
 }
 
 // Initial load
-loadSelectedLogo();
+if (ALL_ITEMS.length) {
+  logoSearch.value = ALL_ITEMS[0].n;
+  logoSelectValue.value = ALL_ITEMS[0].n;
+  loadSelectedLogo(ALL_ITEMS[0].n);
+}
 </script>
 </body>
 </html>
