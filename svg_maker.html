@@ -571,7 +571,7 @@ function copyReact() {
 
 function copyVue() {
   const code = getCode(); if (!code) return;
-  const vue = `<template>\n  ${code.replace(/^/gm, '  ')}\n</template>\n\n<script setup>\n// Vue icon component\n</script>\n`;
+  const vue = `<template>\n  ${code.replace(/^/gm, '  ')}\n</template>\n\n<script setup>\n// Vue icon component\n<\/script>\n`;
   navigator.clipboard.writeText(vue);
   showToast('Vue SFC copied');
 }
