@@ -602,6 +602,16 @@ html.dark .theme-toggle .seg-dark {
 .pill-btn-secondary:hover {
   background: var(--canvas-parchment);
 }
+/* Custom Logo Search */
+.custom-select { position: relative; }
+.logo-dropdown { display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 100; max-height: 240px; overflow-y: auto; background: var(--canvas); border: 1px solid var(--hairline-strong); border-radius: var(--radius-md); margin-top: 4px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+.logo-dropdown.open { display: block; }
+.logo-dropdown-item { padding: 0.6rem 0.75rem; font-size: 0.8125rem; cursor: pointer; color: var(--ink); border-bottom: 1px solid var(--hairline); }
+.logo-dropdown-item:hover { background: var(--canvas-parchment); }
+.logo-dropdown-item:last-child { border-bottom: none; }
+.logo-dropdown-item small { color: var(--muted); font-size: 0.7rem; margin-left: 0.5rem; }
+.search-icon-btn { position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); cursor: pointer; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); }
+.search-icon-btn:hover { background: var(--canvas-parchment); color: var(--ink); }
 </style>
 </head>
 <body>
@@ -660,9 +670,14 @@ html.dark .theme-toggle .seg-dark {
       
       <div class="logo-picker-wrap">
         <label class="setting-label">Select Logo</label>
-        <select class="logo-select" id="logoSelect" onchange="loadSelectedLogo()">
-          <!-- Options rendered dynamically -->
-        </select>
+        <div class="custom-select" id="logoSelectWrap">
+          <input type="text" id="logoSearch" class="logo-select" placeholder="Type to search logos..." autocomplete="off" style="padding-right:2.5rem;" oninput="filterLogos()" onfocus="showLogoDropdown()" onkeydown="handleLogoKey(event)" />
+          <button type="button" class="search-icon-btn" onclick="document.getElementById('logoSearch').focus()">
+            <svg class="icon" viewBox="0 0 24 24" style="width:1rem;height:1rem;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </button>
+          <div class="logo-dropdown" id="logoDropdown"></div>
+          <input type="hidden" id="logoSelectValue" />
+        </div>
       </div>
     </div>
   </aside>

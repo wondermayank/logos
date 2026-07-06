@@ -166,6 +166,20 @@ html.dark .theme-toggle .seg-dark { display: block; }
 /* Status toast */
 .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(120px); background: var(--ink); color: var(--canvas); padding: 0.75rem 1.5rem; border-radius: var(--radius-pill); font-size: 0.875rem; font-weight: 600; z-index: 200; pointer-events: none; opacity: 0; transition: transform 0.3s ease, opacity 0.3s ease; }
 .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+/* Color Swatches */
+.color-swatch { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0; }
+.color-swatch input[type="color"] { width: 32px; height: 32px; padding: 0; border: 1px solid var(--hairline-strong); border-radius: var(--radius-sm); cursor: pointer; }
+.color-swatch .color-label { font-size: 0.75rem; font-family: monospace; color: var(--muted); flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.color-swatch .color-val { font-size: 0.75rem; font-family: monospace; color: var(--muted); min-width: 24px; text-align: right; }
+#colorList { display: flex; flex-direction: column; gap: 0.25rem; }
+.color-section-empty { font-size: 0.75rem; color: var(--muted); padding: 0.5rem 0; }
+
+/* Toggle button */
+.code-toggle-wrap { display: flex; align-items: center; gap: 0.5rem; }
+.code-toggle { padding: 0.35rem 0.75rem; font-size: 0.75rem; font-weight: 600; border-radius: var(--radius-pill); background: var(--canvas-parchment); color: var(--muted); border: 1px solid var(--hairline); cursor: pointer; }
+.code-toggle:hover { background: var(--surface-strong); color: var(--ink); }
+.code-toggle.active { background: var(--primary); color: var(--canvas); }
+.editor-textarea.hidden { display: none; }
 </style>
 </head>
 <body>
@@ -241,6 +255,13 @@ html.dark .theme-toggle .seg-dark { display: block; }
           <button class="template-btn" onclick="minifySvg()">Minify Code</button>
         </div>
       </div>
+
+      <div class="sidebar-section">
+        <h3>Colors in SVG</h3>
+        <div id="colorList">
+          <div class="color-section-empty">Colors appear here when you edit SVG</div>
+        </div>
+      </div>
     </div>
   </aside>
 
@@ -250,7 +271,10 @@ html.dark .theme-toggle .seg-dark { display: block; }
       <div class="editor-card">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <h2 style="font-size: 1.25rem;">SVG Code Editor</h2>
-          <span style="font-size:0.75rem;color:var(--muted);font-family:monospace;" id="charCount">0 chars</span>
+          <div class="code-toggle-wrap">
+            <span style="font-size:0.75rem;color:var(--muted);font-family:monospace;" id="charCount">0 chars</span>
+            <button type="button" class="code-toggle" id="codeToggleBtn" onclick="toggleCodeVisibility()">Hide Code</button>
+          </div>
         </div>
         <textarea class="editor-textarea" id="svgInput" oninput="updatePreview()" spellcheck="false" placeholder="Paste or type your raw SVG code here...
 
