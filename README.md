@@ -12,7 +12,7 @@ Search, filter by category, copy ready-to-use code or download the SVG in one cl
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)](#-tech-stack)
 [![Free](https://img.shields.io/badge/price-free-22c55e)](#-about)
 
-### 🔗 [Browse the logos](https://wondermayank.github.io/logos/)
+### 🔗 [Browse the logos](https://project.wondermayank.in/code/svg/)
 
 </div>
 
